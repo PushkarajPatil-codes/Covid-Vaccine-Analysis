@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VaxTrack India | COVID-19 Vaccination Analytics Dashboard</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* --- CSS Variables & Color Palette --- */
+    :root {
+      --bg-neutral: #f8fafc;
+      --bg-card: #ffffff;
+      --border-color: #e2e8f0;
+      
+      --color-primary: #2563eb;    /* Royal Blue */
+      --color-cyan: #0891b2;       /* Cyan */
+      --color-pink: #db2777;       /* Pink */
+      --color-success: #059669;    /* Forest Green */
+      
+      --text-main: #334155;        /* Slate Gray */
+      --text-muted: #64748b;       /* Muted Gray */
+      --text-bright: #0f172a;      /* Dark Bold Slate */
+      
+      --font-title: 'Outfit', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    /* --- Base Styles --- */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-neutral);
+      color: var(--text-main);
+      font-family: var(--font-body);
+      line-height: 1.6;
+      padding: 2rem 1.5rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    /* --- Header Styling --- */
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+      border-bottom: 1.5px solid var(--border-color);
+      padding-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .logo-icon {
+      background-color: var(--color-primary);
+      color: #ffffff;
+      width: 3rem;
+      height: 3rem;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+    }
+
+    .logo-text h1 {
+      font-family: var(--font-title);
+      font-size: 1.8rem;
+      color: var(--text-bright);
+    }
+
+    .logo-text h1 span {
+      color: var(--color-primary);
+    }
+
+    .logo-text p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .badge {
+      background: #e2e8f0;
+      color: var(--text-main);
+      padding: 0.4rem 0.8rem;
+      border-radius: 99px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* --- KPI Grid --- */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .kpi-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .kpi-icon {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .kpi-icon.blue { background: rgba(37, 99, 235, 0.1); color: var(--color-primary); }
+    .kpi-icon.purple { background: rgba(124, 58, 237, 0.1); color: #7c3aed; }
+    .kpi-icon.cyan { background: rgba(8, 145, 178, 0.1); color: var(--color-cyan); }
+    .kpi-icon.pink { background: rgba(219, 39, 119, 0.1); color: var(--color-pink); }
+
+    .kpi-info h3 {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.2rem;
+    }
+
+    .kpi-value {
+      font-family: var(--font-title);
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-bright);
+    }
+
+    /* --- Cards Layout --- */
+    .sections-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .card h2 {
+      font-family: var(--font-title);
+      font-size: 1.3rem;
+      color: var(--text-bright);
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      border-bottom: 1.5px solid var(--border-color);
+      padding-bottom: 0.6rem;
+    }
+
+    .card h2 i {
+      color: var(--color-primary);
+    }
+
+    .card-content-split {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 820px) {
+      .card-content-split {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+      }
+    }
+
+    /* --- Table Styles --- */
+    .table-wrapper {
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.88rem;
+    }
+
+    th, td {
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: #f1f5f9;
+      color: var(--text-bright);
+      font-weight: 600;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .text-right {
+      text-align: right;
+    }
+
+    .badge-state {
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    /* --- Chart Container --- */
+    .chart-container {
+      position: relative;
+      width: 100%;
+      height: 320px;
+    }
+
+    .chart-container-donut {
+      position: relative;
+      width: 100%;
+      height: 250px;
+    }
+
+    /* --- Gender Progress Bar --- */
+    .gender-analysis {
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    .gender-label-row {
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .gender-label-row.male { color: var(--color-cyan); }
+    .gender-label-row.female { color: var(--color-pink); }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 14px;
+      background: rgba(219, 39, 119, 0.15); /* Pink Background */
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--color-cyan); /* Cyan Fill */
+      width: 53.8%; /* Male percentage */
+      border-radius: 99px 0 0 99px;
+    }
+
+    .insight-box {
+      background-color: #f1f5f9;
+      border-left: 4px solid var(--color-primary);
+      padding: 1rem;
+      border-radius: 0 8px 8px 0;
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    .insight-box strong {
+      color: var(--text-bright);
+    }
+
+    /* --- Footer --- */
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 1.5rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- Header -->
+    <header>
+      <div class="logo-section">
+        <div class="logo-icon"><i class="fa-solid fa-chart-bar"></i></div>
+        <div class="logo-text">
+          <h1>VaxTrack <span>India</span></h1>
+          <p>COVID-19 Vaccination Analytics Dashboard</p>
+        </div>
+      </div>
+      <div class="badge"><i class="fa-solid fa-table-list"></i> 7,845 Rows Analyzed</div>
+    </header>
+
+    <!-- KPI Dashboard Grid -->
+    <section class="kpi-grid">
+      <!-- Card 1 -->
+      <div class="kpi-card">
+        <div class="kpi-icon blue"><i class="fa-solid fa-syringe"></i></div>
+        <div class="kpi-info">
+          <h3>First Dose administered</h3>
+          <p class="kpi-value">400,150,406</p>
+        </div>
+      </div>
+      <!-- Card 2 -->
+      <div class="kpi-card">
+        <div class="kpi-icon purple"><i class="fa-solid fa-kit-medical"></i></div>
+        <div class="kpi-info">
+          <h3>Second Dose administered</h3>
+          <p class="kpi-value">113,077,994</p>
+        </div>
+      </div>
+      <!-- Card 3 -->
+      <div class="kpi-card">
+        <div class="kpi-icon cyan"><i class="fa-solid fa-mars"></i></div>
+        <div class="kpi-info">
+          <h3>Males Vaccinated</h3>
+          <p class="kpi-value">134,941,971</p>
+        </div>
+      </div>
+      <!-- Card 4 -->
+      <div class="kpi-card">
+        <div class="kpi-icon pink"><i class="fa-solid fa-venus"></i></div>
+        <div class="kpi-info">
+          <h3>Females Vaccinated</h3>
+          <p class="kpi-value">115,668,447</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sections Grid -->
+    <div class="sections-grid">
+      
+      <!-- Section a. Describe the Dataset -->
+      <div class="card">
+        <h2><i class="fa-solid fa-database"></i> a. Dataset Description</h2>
+        <p style="margin-bottom: 1.2rem; font-size: 0.95rem;">
+          The dataset <code>covid_vaccine_statewise.csv</code> contains the daily progression of the COVID-19 vaccination drive in India across different states. Below is the basic structure and statistics of the key numerical features:
+        </p>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th class="text-right">First Dose Administered</th>
+                <th class="text-right">Second Dose Administered</th>
+                <th class="text-right">Total Individuals Vaccinated</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Count</strong></td>
+                <td class="text-right">7,307</td>
+                <td class="text-right">7,307</td>
+                <td class="text-right">5,919</td>
+              </tr>
+              <tr>
+                <td><strong>Average (Mean)</strong></td>
+                <td class="text-right">7,414,415</td>
+                <td class="text-right">1,776,990</td>
+                <td class="text-right">4,547,842</td>
+              </tr>
+              <tr>
+                <td><strong>Minimum</strong></td>
+                <td class="text-right">7</td>
+                <td class="text-right">0</td>
+                <td class="text-right">7</td>
+              </tr>
+              <tr>
+                <td><strong>Maximum</strong></td>
+                <td class="text-right">400,150,406</td>
+                <td class="text-right">113,077,994</td>
+                <td class="text-right">250,656,880</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Section b & c. Statewise Vaccination Numbers -->
+      <div class="card">
+        <h2><i class="fa-solid fa-map-location-dot"></i> b & c. Statewise Distribution & Numbers</h2>
+        <div class="card-content-split">
+          <!-- Chart -->
+          <div class="chart-container">
+            <canvas id="stateChart"></canvas>
+          </div>
+          <!-- Table -->
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>State</th>
+                  <th class="text-right">First Dose</th>
+                  <th class="text-right">Second Dose</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge-state">Uttar Pradesh</span></td>
+                  <td class="text-right">45,932,488</td>
+                  <td class="text-right">8,515,236</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Maharashtra</span></td>
+                  <td class="text-right">35,040,812</td>
+                  <td class="text-right">12,112,554</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Madhya Pradesh</span></td>
+                  <td class="text-right">29,723,036</td>
+                  <td class="text-right">5,733,640</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Gujarat</span></td>
+                  <td class="text-right">28,101,222</td>
+                  <td class="text-right">9,051,153</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Rajasthan</span></td>
+                  <td class="text-right">27,008,606</td>
+                  <td class="text-right">8,375,056</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Karnataka</span></td>
+                  <td class="text-right">25,847,691</td>
+                  <td class="text-right">7,432,852</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Bihar</span></td>
+                  <td class="text-right">23,350,171</td>
+                  <td class="text-right">4,484,720</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">West Bengal</span></td>
+                  <td class="text-right">23,257,417</td>
+                  <td class="text-right">9,132,961</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Tamil Nadu</span></td>
+                  <td class="text-right">20,836,674</td>
+                  <td class="text-right">4,686,034</td>
+                </tr>
+                <tr>
+                  <td><span class="badge-state">Andhra Pradesh</span></td>
+                  <td class="text-right">17,628,583</td>
+                  <td class="text-right">6,214,312</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section d & e. Gender Breakdown -->
+      <div class="card">
+        <h2><i class="fa-solid fa-venus-mars"></i> d & e. Gender Distribution Breakdown</h2>
+        <div class="card-content-split">
+          <!-- Chart -->
+          <div class="chart-container-donut">
+            <canvas id="genderChart"></canvas>
+          </div>
+          <!-- Info -->
+          <div class="gender-analysis">
+            <div class="gender-label-row male">
+              <span><i class="fa-solid fa-mars"></i> Males Vaccinated:</span>
+              <span>134,941,971 (53.8%)</span>
+            </div>
+            
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill"></div>
+            </div>
+            
+            <div class="gender-label-row female">
+              <span><i class="fa-solid fa-venus"></i> Females Vaccinated:</span>
+              <span>115,668,447 (46.2%)</span>
+            </div>
+            
+            <div class="insight-box">
+              <i class="fa-solid fa-lightbulb" style="color: var(--color-primary); margin-right: 0.3rem;"></i> 
+              <strong>Gender Analysis:</strong> Out of the total gender-categorized records (250.6 Million individuals), approximately <strong>134.9 Million</strong> are Males and <strong>115.6 Million</strong> are Females, representing a percentage split of <strong>53.8% Male</strong> and <strong>46.2% Female</strong>.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer -->
+    <footer>
+      <p>&copy; COVID-19 India Vaccine Analytics Dashboard Project</p>
+      <p style="margin-top: 0.3rem; font-size: 0.75rem;">Source: Kaggle Ministry of Health and Family Welfare Dataset</p>
+    </footer>
+
+  </div>
+
+  <!-- Chart Rendering Script (Simple & Beginner-friendly) -->
+  <script>
+    // 1. Render Statewise Bar Chart (Horizontal)
+    const stateCtx = document.getElementById('stateChart').getContext('2d');
+    new Chart(stateCtx, {
+      type: 'bar',
+      data: {
+        labels: ["Uttar Pradesh", "Maharashtra", "Madhya Pradesh", "Gujarat", "Rajasthan", "Karnataka", "Bihar", "West Bengal", "Tamil Nadu", "Andhra Pradesh"].reverse(),
+        datasets: [
+          {
+            label: 'First Dose',
+            data: [45932488, 35040812, 29723036, 28101222, 27008606, 25847691, 23350171, 23257417, 20836674, 17628583].reverse(),
+            backgroundColor: '#2563eb',
+            borderRadius: 4
+          },
+          {
+            label: 'Second Dose',
+            data: [8515236, 12112554, 5733640, 9051153, 8375056, 7432852, 4484720, 9132961, 4686034, 6214312].reverse(),
+            backgroundColor: '#7c3aed',
+            borderRadius: 4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        indexAxis: 'y', // Makes bars horizontal
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { family: 'Inter', size: 11 } }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: '#e2e8f0' },
+            ticks: {
+              font: { family: 'Inter', size: 10 },
+              callback: function(val) {
+                if (val >= 1e7) return (val / 1e7) + " Cr";
+                if (val >= 1e5) return (val / 1e5) + " L";
+                return val;
+              }
+            }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { font: { family: 'Outfit', size: 11, weight: '600' }, color: '#0f172a' }
+          }
+        }
+      }
+    });
+
+    // 2. Render Gender Doughnut Chart
+    const genderCtx = document.getElementById('genderChart').getContext('2d');
+    new Chart(genderCtx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Male Vaccinated', 'Female Vaccinated'],
+        datasets: [{
+          data: [134941971, 115668447],
+          backgroundColor: ['#0891b2', '#db2777'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '70%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { font: { family: 'Inter', size: 11 } }
+          }
+        }
+      }
+    });
+  </script>
+
+</body>
+</html>
